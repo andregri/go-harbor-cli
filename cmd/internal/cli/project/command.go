@@ -5,11 +5,15 @@ package project
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 
 	client_project "go-harbor-cli/cmd/internal/client/project"
 
 	"github.com/spf13/cobra"
 )
+
+var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -27,7 +31,7 @@ get: go-harbor-cli project get --name myproj`,
 	createCmd := newCreateProjectCommand()
 	cmd.AddCommand(createCmd)
 
-	cmd.PersistentFlags().String("name", "default", "Project name")
+	cmd.PersistentFlags().String("name", "", "Project name")
 	cmd.MarkFlagRequired("name")
 
 	return cmd
@@ -37,9 +41,9 @@ func newCreateProjectCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create Harbor projects",
-		Long: `Create Harbor private projects with a quota size limit
-
-create: go-harbor-cli project create --name myproj`,
+		Long: `Create a private Harbor project with the specified name and quota size in GiB.
+The project will be created with auto_scan enabled.
+Then you can add admin members to the project using the "admin-members" flag.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			baseurl, _ := cmd.Flags().GetString("baseurl")
 			username, _ := cmd.Flags().GetString("username")
@@ -54,13 +58,20 @@ create: go-harbor-cli project create --name myproj`,
 				BaseUrl:  baseurl,
 				Username: username,
 				Password: password,
+				Logger:   logger,
 			}
 
 			p := client_project.Project{
-				Name:         name,
-				QuotaSizeGiB: quota_size_gib,
+				ProjectName:  name,
+				Public:       false,
+				Metadata:     client_project.ProjectMetadata{AutoScan: "true"},
+				StorageLimit: quota_size_gib,
 			}
 			err := cProject.Create(p)
+			if err != nil {
+				cmd.SilenceUsage = true
+				return err
+			}
 
 			return err
 		},
