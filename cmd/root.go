@@ -6,7 +6,7 @@ package cmd
 import (
 	"os"
 
-	"go-harbor-cli/cmd/internal/cli/project"
+	"go-harbor-cli/cmd/internal/cli"
 
 	"github.com/spf13/cobra"
 )
@@ -34,16 +34,17 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(project.NewCommand())
+	rootCmd.AddCommand(cli.NewProjectCommand())
+	rootCmd.AddCommand(cli.NewQuotaCommand())
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-harbor-cli.yaml)")
-	rootCmd.PersistentFlags().String("username", "default", "harbor username for basic authentication")
-	rootCmd.PersistentFlags().String("password", "default", "harbor password for basic authentication")
-	rootCmd.PersistentFlags().String("baseurl", "https://localhost:30080", "harbor baseurl")
+	rootCmd.PersistentFlags().String("username", "", "harbor username for basic authentication")
+	rootCmd.PersistentFlags().String("password", "", "harbor password for basic authentication")
+	rootCmd.PersistentFlags().String("baseurl", "", "harbor baseurl")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
