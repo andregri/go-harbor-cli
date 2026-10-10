@@ -29,12 +29,6 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-type Client struct {
-	BaseUrl  string
-	Username string
-	Password string
-}
-
 func (c Client) Create(p Project) (string, error) {
 	client := &http.Client{}
 

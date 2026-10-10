@@ -6,7 +6,7 @@ package project
 import (
 	"fmt"
 
-	client_project "go-harbor-cli/cmd/internal/client/project"
+	harbor "go-harbor-cli/cmd/internal/client"
 
 	"github.com/spf13/cobra"
 )
@@ -50,16 +50,16 @@ Then you can add admin members to the project using the "admin-members" flag.`,
 
 			fmt.Printf("creating project %q...\n", name)
 
-			cProject := &client_project.Client{
+			cProject := &harbor.Client{
 				BaseUrl:  baseurl,
 				Username: username,
 				Password: password,
 			}
 
-			p := client_project.Project{
+			p := harbor.Project{
 				ProjectName:  name,
 				Public:       false,
-				Metadata:     client_project.ProjectMetadata{AutoScan: "true"},
+				Metadata:     harbor.ProjectMetadata{AutoScan: "true"},
 				StorageLimit: quota_size_gib * 1024 * 1024 * 1024, // Convert GiB to bytes
 			}
 			_, err := cProject.Create(p)
