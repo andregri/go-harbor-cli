@@ -6,7 +6,7 @@ build:
 	go build -o go-harbor-cli
 
 create-project: build
-	$(PROGR) project create $(COMMON_FLAGS) --name deleteme --quota-size-gib 4
+	$(PROGR) project create $(COMMON_FLAGS) --name deleteme --quota-size-gib 4 --admin-users "pippo,pluto"
 
 get-quota: build
 	$(PROGR) quota get $(COMMON_FLAGS) --project-id 36

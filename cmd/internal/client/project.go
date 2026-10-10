@@ -39,8 +39,6 @@ func (c Client) Create(p Project) (int64, error) {
 		return id, fmt.Errorf("json.Marshal(): %v", err)
 	}
 
-	fmt.Printf("%v\n", c)
-
 	url := fmt.Sprintf("%s/api/v2.0/projects", c.BaseUrl)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {

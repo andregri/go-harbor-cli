@@ -38,15 +38,15 @@ func newCreateProjectSubcommand() *cobra.Command {
 		Short: "Create Harbor projects",
 		Long:  `Create a private Harbor project with the specified name and auto_scan enabled.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name, _ := cmd.Flags().GetString("name")
+			projectName, _ := cmd.Flags().GetString("name")
 			quota_size_gib, _ := cmd.Flags().GetInt64("quota-size-gib")
 			quotaSizeBytes := quota_size_gib * 1024 * 1024 * 1024 // Convert GiB to bytes
-			// admin_members, _ := cmd.Flags().GetStringSlice("admin-members")
+			admin_users, _ := cmd.Flags().GetStringSlice("admin-users")
 
-			fmt.Printf("\ncreating project %q...\n", name)
+			fmt.Printf("\ncreating project %q...\n", projectName)
 
 			p := harbor.Project{
-				ProjectName:  name,
+				ProjectName:  projectName,
 				Public:       false,
 				Metadata:     harbor.ProjectMetadata{AutoScan: "true"},
 				StorageLimit: quotaSizeBytes,
@@ -61,6 +61,28 @@ func newCreateProjectSubcommand() *cobra.Command {
 
 			fmt.Printf("Created private project %s\n", strconv.FormatInt(projectId, 10))
 
+			for _, username := range admin_users {
+				// m := &harbor.Member{
+				// 	RoleId:
+				// 	User: harbor.MemberUser{
+				// 		Username: username,
+				// 	},
+				// }
+				m := map[string]any{
+					"role_id": harbor.USER_MEMBER_ADMIN,
+					"member_user": map[string]any{
+						"username": username,
+					},
+				}
+				err = client.AddProjectMember(projectName, m)
+				if err != nil {
+					cmd.SilenceUsage = true
+					return err
+				}
+
+				fmt.Printf("Added admin user %q to project %q\n", username, projectName)
+			}
+
 			return nil
 		},
 	}
@@ -69,8 +91,8 @@ func newCreateProjectSubcommand() *cobra.Command {
 	cmd.MarkFlagRequired("name")
 	cmd.Flags().Int64("quota-size-gib", 1, "Max quota size in GiB for the project")
 	cmd.MarkFlagRequired("quota-size-gib")
-	// cmd.Flags().StringSlice("admin-members", []string{}, "Admin members of the project")
-	// cmd.MarkFlagRequired("admin-members")
+	cmd.Flags().StringSlice("admin-users", []string{}, "Admin users of the project")
+	cmd.MarkFlagRequired("admin-users")
 
 	return cmd
 }
