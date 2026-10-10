@@ -60,7 +60,7 @@ Then you can add admin members to the project using the "admin-members" flag.`,
 				ProjectName:  name,
 				Public:       false,
 				Metadata:     client_project.ProjectMetadata{AutoScan: "true"},
-				StorageLimit: quota_size_gib,
+				StorageLimit: quota_size_gib * 1024 * 1024 * 1024, // Convert GiB to bytes
 			}
 			_, err := cProject.Create(p)
 			if err != nil {
