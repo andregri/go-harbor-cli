@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"uuid"
-
-	"log/slog"
 )
 
 type Project struct {
@@ -34,20 +33,20 @@ type Client struct {
 	BaseUrl  string
 	Username string
 	Password string
-	Logger   *slog.Logger
 }
 
-func (c Client) Create(p Project) error {
+func (c Client) Create(p Project) (string, error) {
 	client := &http.Client{}
 
 	body, err := json.Marshal(p)
 	if err != nil {
-		return fmt.Errorf("Error json.Marshal(): %v", err)
+		return "", fmt.Errorf("Error json.Marshal(): %v", err)
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v2.0/projects", c.BaseUrl), bytes.NewBuffer(body))
+	url := fmt.Sprintf("%s/api/v2.0/projects", c.BaseUrl)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("Error http.NewRequest() POST /projects: %v", err)
+		return "", fmt.Errorf("Error http.NewRequest() POST /projects: %v", err)
 	}
 	req.SetBasicAuth(c.Username, c.Password)
 	req.Header.Set("Content-Type", "application/json")
@@ -56,28 +55,30 @@ func (c Client) Create(p Project) error {
 	reqID := uuid.New().String()
 	req.Header.Set("X-Request-Id", reqID)
 
-	c.Logger.Info("Sending request", "method", req.Method, "url", req.URL.String(), "requestID", reqID)
+	fmt.Printf("POST %s, payload: %s\n", url, body)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error client.Do() POST /projects: %v", err)
+		return "", fmt.Errorf("Error client.Do() POST /projects: %v", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusCreated {
-		id := resp.Header.Get("location")
-		c.Logger.Info(fmt.Sprintf("Project %q (id: %s) created successfully", p.ProjectName, id), "status", resp.StatusCode, "statusText", resp.Status)
-	} else {
-		c.Logger.Error("POST /api/v2.0/projects returned error", "status", resp.StatusCode, "statusText", resp.Status)
+
+	if resp.StatusCode != http.StatusCreated {
+		fmt.Printf("status code: %d, status message: %s\n", resp.StatusCode, resp.Status)
 
 		errorsResp := ErrorsResponse{}
 		decoder := json.NewDecoder(resp.Body)
 		if err := decoder.Decode(&errorsResp); err != nil {
-			return fmt.Errorf("Error decoding error response: %v", err)
+			return "", fmt.Errorf("decoder.Decode(response): %v", err)
 		}
 		for _, e := range errorsResp.Errors {
-			return fmt.Errorf("%s - %s\n", e.Code, e.Message)
+			return "", fmt.Errorf("%s - %s\n", e.Code, e.Message)
 		}
 	}
 
-	return nil
+	location := resp.Header.Get("location")
+	locationItems := strings.Split(location, "/")
+	id := locationItems[len(locationItems)-1]
+	fmt.Printf("Project %s (id: %s) created\n", p.ProjectName, id)
+	return id, nil
 }

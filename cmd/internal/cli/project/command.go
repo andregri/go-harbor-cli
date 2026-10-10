@@ -5,15 +5,11 @@ package project
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
 
 	client_project "go-harbor-cli/cmd/internal/client/project"
 
 	"github.com/spf13/cobra"
 )
-
-var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -58,7 +54,6 @@ Then you can add admin members to the project using the "admin-members" flag.`,
 				BaseUrl:  baseurl,
 				Username: username,
 				Password: password,
-				Logger:   logger,
 			}
 
 			p := client_project.Project{
@@ -67,7 +62,7 @@ Then you can add admin members to the project using the "admin-members" flag.`,
 				Metadata:     client_project.ProjectMetadata{AutoScan: "true"},
 				StorageLimit: quota_size_gib,
 			}
-			err := cProject.Create(p)
+			_, err := cProject.Create(p)
 			if err != nil {
 				cmd.SilenceUsage = true
 				return err
